@@ -10,8 +10,60 @@ const char* vertexShaderSource = "#version 330 core\n"
 	"{\n"
 	"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
 	"}\0";
+// Our fragment shader source code in GLSL (OpenGL Shading Language)
+// Just set fragment color as a orange-ish color
+const char* fragmentShaderSource = "#version 330 core\n"
+	"out vec4 FragColor;\n"
+	"void main()\n"
+	"{\n"
+	"	FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
+	"}\n";
 
-void buildVertexShader() {
+void buildVertexShader(unsigned int &vertexShader) {
+	// Create vertex shader with its source code
+	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
+	glCompileShader(vertexShader);
+
+	// Check if vertex shader compilation failed
+	int success;
+	char infoLog[512];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+}
+
+void buildFragmentShader(unsigned int &fragmentShader) {
+	// Create fragment shader with its source code
+	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	glCompileShader(fragmentShader);
+
+	// Check if fragment shader compilation failed
+	int success;
+	char infoLog[512];
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	if (!success) {
+		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+	}
+}
+
+void linkProgramShaders(unsigned int& shaderProgram, unsigned int& vertexShader, unsigned int& fragmentShader) {
+	glAttachShader(shaderProgram, vertexShader);
+	glAttachShader(shaderProgram, fragmentShader);
+	glLinkProgram(shaderProgram);
+
+	int success;
+	char infoLog[512];
+	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+		std::cout << "ERROR::SHADER::PROGRAM::LINK_FAILED\n" << infoLog << std::endl;
+	}
+}
+
+void createVertexBufferObject() {
 	// Define triangle vertices in NDC (Normalized Device Coordinates) (Vertex Data)
 	float vertices[] = {
 		-0.5f, -0.5f, 0.0f,
@@ -27,21 +79,6 @@ void buildVertexShader() {
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	// Copy vertex data into buffer's memory
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// Create vertex shader with its source code
-	unsigned int vertexShader;
-	vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
-
-	// Check if vertex shader compilation failed
-	int success;
-	char infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-	if (!success) {
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
 }
 
 // Callback to resize openGL viewport as the window
@@ -82,7 +119,23 @@ int main() {
 		return -1;
 	}
 
-	buildVertexShader();
+	createVertexBufferObject();
+
+	// Build and link OpenGL shaders
+	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	buildVertexShader(vertexShader);
+
+	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	buildFragmentShader(fragmentShader);
+
+	unsigned int shaderProgram = glCreateProgram();
+	linkProgramShaders(shaderProgram, vertexShader, fragmentShader);
+	glUseProgram(shaderProgram);
+
+	// Delete useless shaders objects
+	glDeleteShader(vertexShader);
+	glDeleteShader(fragmentShader);
+
 
 	// Set openGL viewport and ensures resizing
 	glViewport(0, 0, 800, 600);
