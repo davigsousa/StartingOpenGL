@@ -3,7 +3,7 @@
 #include <iostream>
 
 // Our vertex shader source code in GLSL (OpenGL Shading Language)
-// Just foward all vertex coordinates to its vec4
+// Just forward all vertex coordinates to its vec4
 const char* vertexShaderSource = "#version 330 core\n"
 	"layout (location = 0) in vec3 aPos;\n"
 	"void main()\n"
@@ -23,6 +23,7 @@ void buildVertexShader(unsigned int &vertexShader) {
 	// Create vertex shader with its source code
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 	glCompileShader(vertexShader);
+
 
 	// Check if vertex shader compilation failed
 	int success;
@@ -64,11 +65,12 @@ void linkProgramShaders(unsigned int& shaderProgram, unsigned int& vertexShader,
 }
 
 void createVertexBufferObject() {
-	// Define triangle vertices in NDC (Normalized Device Coordinates) (Vertex Data)
+	// Define rectangle vertices in NDC (Normalized Device Coordinates) (Vertex Data)
 	float vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
+		 0.5f,  0.5f, 0.0f,  // top right
+		 0.5f, -0.5f, 0.0f,  // bottom right
+		-0.5f, -0.5f, 0.0f,  // bottom left
+		-0.5f,  0.5f, 0.0f   // top left 
 	};
 
 	// Create a vertex buffer object
@@ -81,6 +83,21 @@ void createVertexBufferObject() {
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 }
 
+void createElementBufferObject() {
+	// Create element buffer object (EBO)
+	// To indicate the order of vertices to draw
+	unsigned int indices[] = {
+		0, 1, 3,   // first triangle
+		1, 2, 3    // second triangle
+	};
+
+	unsigned int EBO;
+	glGenBuffers(1, &EBO);
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+}
+
 // Callback to resize openGL viewport as the window
 void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
@@ -90,6 +107,12 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 void processInput(GLFWwindow* window) {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		glfwSetWindowShouldClose(window, true);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
+		GLint polygonMode[2];
+		glGetIntegerv(GL_POLYGON_MODE, polygonMode);
+		glPolygonMode(GL_FRONT_AND_BACK, polygonMode[0] == GL_LINE ? GL_FILL : GL_LINE);
 	}
 }
 
@@ -119,7 +142,13 @@ int main() {
 		return -1;
 	}
 
+	// Create a Vertex Array Object
+	unsigned int VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
 	createVertexBufferObject();
+	createElementBufferObject();
 
 	// Build and link OpenGL shaders
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -130,7 +159,6 @@ int main() {
 
 	unsigned int shaderProgram = glCreateProgram();
 	linkProgramShaders(shaderProgram, vertexShader, fragmentShader);
-	glUseProgram(shaderProgram);
 
 	// Delete useless shaders objects
 	glDeleteShader(vertexShader);
@@ -144,6 +172,11 @@ int main() {
 	glViewport(0, 0, 800, 600);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+	// Define wireframe mode
+	// apply Line polygon mode to front and back of all models
+	// the default value is GL_FILL
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
 	// render loop, while not should be closed
 	while (!glfwWindowShouldClose(window)) {
 		// Process input
@@ -152,6 +185,11 @@ int main() {
 		// ----- Rendering commands -----
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		glUseProgram(shaderProgram);
+		glBindVertexArray(VAO);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+		glBindVertexArray(0);
 
 		// ----------
 		// Swap window buffers and call events if needed
