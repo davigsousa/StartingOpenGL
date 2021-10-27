@@ -136,6 +136,9 @@ int main() {
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
+	// Set how openGL should interpret vertex buffer data
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 
 	// Set openGL viewport and ensures resizing
 	glViewport(0, 0, 800, 600);
