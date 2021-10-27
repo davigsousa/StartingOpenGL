@@ -67,10 +67,15 @@ void linkProgramShaders(unsigned int& shaderProgram, unsigned int& vertexShader,
 void createVertexBufferObject() {
 	// Define rectangle vertices in NDC (Normalized Device Coordinates) (Vertex Data)
 	float vertices[] = {
-		 0.5f,  0.5f, 0.0f,  // top right
-		 0.5f, -0.5f, 0.0f,  // bottom right
-		-0.5f, -0.5f, 0.0f,  // bottom left
-		-0.5f,  0.5f, 0.0f   // top left 
+		// First triangle
+		-0.50f, -0.25f,  0.0f,
+		-0.50f,  0.50f,  0.0f,
+		 0.25f,  0.50f,  0.0f,
+
+		 // Second triangle
+		-0.25f, -0.50f,  0.0f,
+		 0.50f,  0.25f,  0.0f,
+		 0.50f, -0.50f,  0.0f
 	};
 
 	// Create a vertex buffer object
@@ -87,8 +92,8 @@ void createElementBufferObject() {
 	// Create element buffer object (EBO)
 	// To indicate the order of vertices to draw
 	unsigned int indices[] = {
-		0, 1, 3,   // first triangle
-		1, 2, 3    // second triangle
+		0, 1, 2,   // first triangle
+		3, 4, 5    // second triangle
 	};
 
 	unsigned int EBO;
